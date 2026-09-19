@@ -1,0 +1,14 @@
+# Local Postgres + Redis, matching prod (Vultr Managed PG / Redis).
+# The mock app does NOT need these yet -- it's here so everyone has the same infra
+# the moment we swap the in-memory store for SQLAlchemy and add Celery.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: openevidence
+      POSTGRES_PASSWORD: openevidence
+      POSTGRES_DB: openevidence
+    ports: ["5432:5432"]
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]

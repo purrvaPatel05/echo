@@ -1,0 +1,1123 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenEvidence Referral API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Me",
+        "operationId": "me_api_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/specialists": {
+      "get": {
+        "tags": [
+          "specialists"
+        ],
+        "summary": "List Specialists",
+        "operationId": "list_specialists_api_specialists_get",
+        "parameters": [
+          {
+            "name": "specialty",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Specialty"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Specialist"
+                  },
+                  "title": "Response List Specialists Api Specialists Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "List Cases",
+        "operationId": "list_cases_api_cases_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Case"
+                  },
+                  "type": "array",
+                  "title": "Response List Cases Api Cases Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Create Case",
+        "operationId": "create_case_api_cases_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Case"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Get Case",
+        "operationId": "get_case_api_cases__case_id__get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Case"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/match": {
+      "post": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Match Case",
+        "description": "Parse notes -> guardrail + rank specialists -> look up trials.\n\nSynchronous in the mock. In production this enqueues a Celery job.",
+        "operationId": "match_case_api_cases__case_id__match_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/referrals": {
+      "get": {
+        "tags": [
+          "referrals"
+        ],
+        "summary": "List Referrals",
+        "operationId": "list_referrals_api_referrals_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Referral"
+                  },
+                  "type": "array",
+                  "title": "Response List Referrals Api Referrals Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "referrals"
+        ],
+        "summary": "Create Referral",
+        "operationId": "create_referral_api_referrals_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReferralCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Referral"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/referrals/{referral_id}/status": {
+      "patch": {
+        "tags": [
+          "referrals"
+        ],
+        "summary": "Set Referral Status",
+        "operationId": "set_referral_status_api_referrals__referral_id__status_patch",
+        "parameters": [
+          {
+            "name": "referral_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Referral Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "pending",
+                "accepted",
+                "declined",
+                "scheduled"
+              ],
+              "type": "string",
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Referral"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/specialists/{specialist_id}/slots": {
+      "get": {
+        "tags": [
+          "scheduling"
+        ],
+        "summary": "List Slots",
+        "operationId": "list_slots_api_specialists__specialist_id__slots_get",
+        "parameters": [
+          {
+            "name": "specialist_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Specialist Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Slot"
+                  },
+                  "title": "Response List Slots Api Specialists  Specialist Id  Slots Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/appointments": {
+      "post": {
+        "tags": [
+          "scheduling"
+        ],
+        "summary": "Book Appointment",
+        "operationId": "book_appointment_api_appointments_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Referral"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/consults": {
+      "get": {
+        "tags": [
+          "consults"
+        ],
+        "summary": "List Consults",
+        "description": "One consult thread per specialist (id == specialist id) in the mock.",
+        "operationId": "list_consults_api_consults_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Consult"
+                  },
+                  "type": "array",
+                  "title": "Response List Consults Api Consults Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/consults/{consult_id}/messages": {
+      "get": {
+        "tags": [
+          "consults"
+        ],
+        "summary": "List Messages",
+        "operationId": "list_messages_api_consults__consult_id__messages_get",
+        "parameters": [
+          {
+            "name": "consult_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Consult Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConsultMessage"
+                  },
+                  "title": "Response List Messages Api Consults  Consult Id  Messages Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AppointmentCreate": {
+        "properties": {
+          "referral_id": {
+            "type": "string",
+            "title": "Referral Id"
+          },
+          "slot_id": {
+            "type": "string",
+            "title": "Slot Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "referral_id",
+          "slot_id"
+        ],
+        "title": "AppointmentCreate"
+      },
+      "Case": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Title"
+          },
+          "patient_age": {
+            "type": "integer",
+            "maximum": 130.0,
+            "minimum": 0.0,
+            "title": "Patient Age"
+          },
+          "patient_sex": {
+            "type": "string",
+            "enum": [
+              "F",
+              "M",
+              "X"
+            ],
+            "title": "Patient Sex"
+          },
+          "urgency": {
+            "type": "string",
+            "enum": [
+              "routine",
+              "urgent",
+              "emergent"
+            ],
+            "title": "Urgency",
+            "default": "routine"
+          },
+          "notes": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Notes",
+            "description": "Free-text clinical notes"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "referring_physician_id": {
+            "type": "string",
+            "title": "Referring Physician Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "patient_age",
+          "patient_sex",
+          "notes",
+          "id",
+          "created_at",
+          "referring_physician_id"
+        ],
+        "title": "Case"
+      },
+      "CaseCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Title"
+          },
+          "patient_age": {
+            "type": "integer",
+            "maximum": 130.0,
+            "minimum": 0.0,
+            "title": "Patient Age"
+          },
+          "patient_sex": {
+            "type": "string",
+            "enum": [
+              "F",
+              "M",
+              "X"
+            ],
+            "title": "Patient Sex"
+          },
+          "urgency": {
+            "type": "string",
+            "enum": [
+              "routine",
+              "urgent",
+              "emergent"
+            ],
+            "title": "Urgency",
+            "default": "routine"
+          },
+          "notes": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Notes",
+            "description": "Free-text clinical notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "patient_age",
+          "patient_sex",
+          "notes"
+        ],
+        "title": "CaseCreate"
+      },
+      "Consult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "specialist": {
+            "$ref": "#/components/schemas/Specialist"
+          },
+          "last_message": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsultMessage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "specialist"
+        ],
+        "title": "Consult"
+      },
+      "ConsultMessage": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "consult_id": {
+            "type": "string",
+            "title": "Consult Id"
+          },
+          "sender_id": {
+            "type": "string",
+            "title": "Sender Id"
+          },
+          "sender_name": {
+            "type": "string",
+            "title": "Sender Name"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "sent_at": {
+            "type": "string",
+            "title": "Sent At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "consult_id",
+          "sender_id",
+          "sender_name",
+          "body",
+          "sent_at"
+        ],
+        "title": "ConsultMessage"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MatchResult": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "title": "Case Id"
+          },
+          "parsed": {
+            "$ref": "#/components/schemas/ParsedCase"
+          },
+          "specialists": {
+            "items": {
+              "$ref": "#/components/schemas/SpecialistMatch"
+            },
+            "type": "array",
+            "title": "Specialists"
+          },
+          "trials": {
+            "items": {
+              "$ref": "#/components/schemas/Trial"
+            },
+            "type": "array",
+            "title": "Trials"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id",
+          "parsed",
+          "specialists",
+          "trials"
+        ],
+        "title": "MatchResult"
+      },
+      "ParsedCase": {
+        "properties": {
+          "condition": {
+            "type": "string",
+            "title": "Condition"
+          },
+          "specialty": {
+            "type": "string",
+            "title": "Specialty"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Keywords"
+          }
+        },
+        "type": "object",
+        "required": [
+          "condition",
+          "specialty",
+          "keywords"
+        ],
+        "title": "ParsedCase",
+        "description": "What the AI layer extracts from free-text notes."
+      },
+      "Referral": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "title": "Case Id"
+          },
+          "specialist_id": {
+            "type": "string",
+            "title": "Specialist Id"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": ""
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "declined",
+              "scheduled"
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "appointment_slot_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Appointment Slot Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id",
+          "specialist_id",
+          "id",
+          "status",
+          "created_at"
+        ],
+        "title": "Referral"
+      },
+      "ReferralCreate": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "title": "Case Id"
+          },
+          "specialist_id": {
+            "type": "string",
+            "title": "Specialist Id"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id",
+          "specialist_id"
+        ],
+        "title": "ReferralCreate"
+      },
+      "Slot": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "specialist_id": {
+            "type": "string",
+            "title": "Specialist Id"
+          },
+          "starts_at": {
+            "type": "string",
+            "title": "Starts At"
+          },
+          "booked": {
+            "type": "boolean",
+            "title": "Booked",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "specialist_id",
+          "starts_at"
+        ],
+        "title": "Slot"
+      },
+      "Specialist": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "specialty": {
+            "type": "string",
+            "title": "Specialty"
+          },
+          "subspecialties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Subspecialties"
+          },
+          "hospital": {
+            "type": "string",
+            "title": "Hospital"
+          },
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lng": {
+            "type": "number",
+            "title": "Lng"
+          },
+          "accepting_referrals": {
+            "type": "boolean",
+            "title": "Accepting Referrals"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "specialty",
+          "subspecialties",
+          "hospital",
+          "city",
+          "lat",
+          "lng",
+          "accepting_referrals"
+        ],
+        "title": "Specialist"
+      },
+      "SpecialistMatch": {
+        "properties": {
+          "specialist": {
+            "$ref": "#/components/schemas/Specialist"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score",
+            "description": "0-1, higher is a better fit"
+          },
+          "distance_km": {
+            "type": "number",
+            "title": "Distance Km"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          },
+          "next_slot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Slot"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "specialist",
+          "score",
+          "distance_km",
+          "rationale"
+        ],
+        "title": "SpecialistMatch"
+      },
+      "Trial": {
+        "properties": {
+          "nct_id": {
+            "type": "string",
+            "title": "Nct Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "condition": {
+            "type": "string",
+            "title": "Condition"
+          },
+          "phase": {
+            "type": "string",
+            "title": "Phase"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nct_id",
+          "title",
+          "condition",
+          "phase",
+          "location",
+          "url"
+        ],
+        "title": "Trial"
+      },
+      "User": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "referring_physician",
+              "specialist",
+              "admin"
+            ],
+            "title": "Role"
+          },
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lng": {
+            "type": "number",
+            "title": "Lng"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "role",
+          "city",
+          "lat",
+          "lng"
+        ],
+        "title": "User"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
