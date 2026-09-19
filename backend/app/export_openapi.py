@@ -1,12 +1,17 @@
-"""Write the OpenAPI spec to <repo>/openapi.json. Frontend generates its types from it.
+"""Regenerate the committed API contract: `uv run python -m app.export_openapi`."""
 
-    python -m app.export_openapi
-"""
 import json
 from pathlib import Path
 
-from .main import api
+from app.main import app
 
-out = Path(__file__).resolve().parents[2] / "openapi.json"
-out.write_text(json.dumps(api.openapi(), indent=2) + "\n")
-print("wrote", out)
+SPEC_PATH = Path(__file__).resolve().parents[2] / "openapi.json"
+
+
+def render() -> str:
+    return json.dumps(app.openapi(), indent=2, sort_keys=True) + "\n"
+
+
+if __name__ == "__main__":
+    SPEC_PATH.write_text(render())
+    print(f"wrote {SPEC_PATH}")
