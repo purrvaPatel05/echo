@@ -1,21 +1,19 @@
-import socketio
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
-from . import store
-from .realtime import sio
-from .routers.api import router
+from app.routers import directory, referrals
 
-api = FastAPI(title="OpenEvidence Referral API", version="0.1.0")
-api.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+app = FastAPI(
+    title="ECHO API",
+    version="0.1.0",
+    description=(
+        "Physician-first referral matching. Nothing is sent or booked without physician approval."
+    ),
 )
-api.include_router(router)
-store.seed_demo_data()
 
-# `uvicorn app.main:app` serves REST + Socket.IO on one port.
-# Use `api` directly for tests / OpenAPI export.
-app = socketio.ASGIApp(sio, other_asgi_app=api)
+app.include_router(referrals.router)
+app.include_router(directory.router)
+
+
+@app.get("/health", tags=["meta"])
+async def health() -> dict[str, str]:
+    return {"status": "ok"}
