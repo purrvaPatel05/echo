@@ -19,5 +19,9 @@ class Settings(BaseSettings):
     # Ask the API to re-run a safety-declined request on another model server-side.
     claude_server_fallback: bool = True
 
+    # Distance: Google Maps Distance Matrix when set; otherwise (or on failure) haversine.
+    google_maps_api_key: str | None = None
+    google_maps_timeout_seconds: float = 5.0
+
 
 settings = Settings()

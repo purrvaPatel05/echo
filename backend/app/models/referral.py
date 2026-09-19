@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from app.models.enums import Complexity, ReferralStatus, Urgency
 from app.models.scheduling import Appointment
+from app.models.trials import TrialApproval
 
 
 class ParsedCase(BaseModel):
@@ -67,6 +68,7 @@ class Referral(BaseModel):
     status: ReferralStatus
     approval: Approval | None = None
     appointment: Appointment | None = None
+    trial_approval: TrialApproval | None = None  # set only once the physician approves a trial
     created_at: datetime
     updated_at: datetime
 
@@ -77,6 +79,12 @@ class ApproveRequest(BaseModel):
     match_run_id: str
     specialist_id: str
     slot_id: str
+    approved_by: str
+
+
+class ApproveTrialRequest(BaseModel):
+    """The physician's explicit approval to surface this trial to the patient."""
+
     approved_by: str
 
 

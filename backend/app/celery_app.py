@@ -24,11 +24,5 @@ def parse_referral_task(referral_id: str) -> None:
 
 @celery_app.task(name="echo.match_referral")
 def match_referral_task(run_id: str) -> None:
-    asyncio.run(
-        run_match(
-            run_id,
-            make_session_factory(poolclass=NullPool),
-            build_analyzers(),
-            build_candidate_provider(),
-        )
-    )
+    factory = make_session_factory(poolclass=NullPool)
+    asyncio.run(run_match(run_id, factory, build_analyzers(), build_candidate_provider(factory)))

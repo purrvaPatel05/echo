@@ -1,6 +1,7 @@
 """Load synthetic data: `uv run python -m app.seed` (run `alembic upgrade head` first)."""
 
 import asyncio
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,7 +9,15 @@ from app.db.models import PatientRow, PhysicianRow, SpecialistRow
 from app.db.repository import Repository
 from app.db.session import default_session_factory
 from app.models.referral import ReferralCreate
-from app.seed.data import DEMO_CASES, PATIENTS, PHYSICIANS, SPECIALISTS
+from app.scheduling.generator import generate_weekly_slots
+from app.seed.data import (
+    DEMO_CASES,
+    INSURANCE_NETWORK,
+    PATIENTS,
+    PHYSICIANS,
+    SPECIALIST_FILL_RATE,
+    SPECIALISTS,
+)
 
 
 async def seed(session: AsyncSession) -> None:
@@ -63,13 +72,22 @@ async def seed(session: AsyncSession) -> None:
                 referral_id=c.referral_id,
             )
 
+    today = datetime.now(UTC).date()
+    for s in SPECIALISTS:
+        fill_rate = SPECIALIST_FILL_RATE.get(s.id, 0.5)
+        await repo.create_slots(generate_weekly_slots(s.id, today, fill_rate))
+
+    for (specialist_id, payer), (status, detail) in INSURANCE_NETWORK.items():
+        await repo.create_insurance_status(specialist_id, payer, status, detail)
+
 
 async def main() -> None:
     async with default_session_factory()() as session:
         await seed(session)
     print(
         f"seeded {len(PHYSICIANS)} physicians, {len(PATIENTS)} patients, "
-        f"{len(SPECIALISTS)} specialists, {len(DEMO_CASES)} demo referrals"
+        f"{len(SPECIALISTS)} specialists, {len(DEMO_CASES)} demo referrals, "
+        f"{len(SPECIALISTS)} specialists' calendars, {len(INSURANCE_NETWORK)} insurance pairs"
     )
 
 

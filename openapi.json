@@ -115,6 +115,20 @@
         "title": "ApproveRequest",
         "type": "object"
       },
+      "ApproveTrialRequest": {
+        "description": "The physician's explicit approval to surface this trial to the patient.",
+        "properties": {
+          "approved_by": {
+            "title": "Approved By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "approved_by"
+        ],
+        "title": "ApproveTrialRequest",
+        "type": "object"
+      },
       "ClinicalFit": {
         "properties": {
           "rationale": {
@@ -140,6 +154,107 @@
         ],
         "title": "Complexity",
         "type": "string"
+      },
+      "ConsultMessage": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "sender_physician_id": {
+            "title": "Sender Physician Id",
+            "type": "string"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "thread_id",
+          "sender_physician_id",
+          "body",
+          "created_at"
+        ],
+        "title": "ConsultMessage",
+        "type": "object"
+      },
+      "ConsultThread": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "initiator_physician_id": {
+            "title": "Initiator Physician Id",
+            "type": "string"
+          },
+          "last_message": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsultMessage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recipient_physician_id": {
+            "title": "Recipient Physician Id",
+            "type": "string"
+          },
+          "referral_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referral Id"
+          },
+          "unread_count": {
+            "default": 0,
+            "title": "Unread Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "initiator_physician_id",
+          "recipient_physician_id",
+          "created_at"
+        ],
+        "title": "ConsultThread",
+        "type": "object"
       },
       "FactorName": {
         "enum": [
@@ -696,6 +811,16 @@
           "status": {
             "$ref": "#/components/schemas/ReferralStatus"
           },
+          "trial_approval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrialApproval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -794,6 +919,25 @@
         "title": "ReferralUpdate",
         "type": "object"
       },
+      "SendMessageRequest": {
+        "properties": {
+          "body": {
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "sender_physician_id": {
+            "title": "Sender Physician Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sender_physician_id",
+          "body"
+        ],
+        "title": "SendMessageRequest",
+        "type": "object"
+      },
       "Specialist": {
         "properties": {
           "address": {
@@ -839,6 +983,41 @@
         "title": "Specialist",
         "type": "object"
       },
+      "StartConsultRequest": {
+        "properties": {
+          "body": {
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "from_physician_id": {
+            "title": "From Physician Id",
+            "type": "string"
+          },
+          "referral_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referral Id"
+          },
+          "to_physician_id": {
+            "title": "To Physician Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "from_physician_id",
+          "to_physician_id",
+          "body"
+        ],
+        "title": "StartConsultRequest",
+        "type": "object"
+      },
       "TooLateCandidate": {
         "description": "Passed every other gate but the earliest slot is outside the urgency window.",
         "properties": {
@@ -866,6 +1045,86 @@
           "detail"
         ],
         "title": "TooLateCandidate",
+        "type": "object"
+      },
+      "Trial": {
+        "properties": {
+          "condition": {
+            "title": "Condition",
+            "type": "string"
+          },
+          "condition_keywords": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Condition Keywords",
+            "type": "array"
+          },
+          "eligibility_summary": {
+            "title": "Eligibility Summary",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "location": {
+            "title": "Location",
+            "type": "string"
+          },
+          "nct_id": {
+            "title": "Nct Id",
+            "type": "string"
+          },
+          "phase": {
+            "title": "Phase",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nct_id",
+          "title",
+          "phase",
+          "condition",
+          "condition_keywords",
+          "summary",
+          "eligibility_summary",
+          "location"
+        ],
+        "title": "Trial",
+        "type": "object"
+      },
+      "TrialApproval": {
+        "properties": {
+          "approved_at": {
+            "format": "date-time",
+            "title": "Approved At",
+            "type": "string"
+          },
+          "approved_by": {
+            "title": "Approved By",
+            "type": "string"
+          },
+          "trial_id": {
+            "title": "Trial Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trial_id",
+          "approved_by",
+          "approved_at"
+        ],
+        "title": "TrialApproval",
         "type": "object"
       },
       "Urgency": {
@@ -946,6 +1205,198 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/consults": {
+      "get": {
+        "description": "Threads for `physician_id`, each with its last message and unread count.",
+        "operationId": "list_consults_consults_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "physician_id",
+            "required": true,
+            "schema": {
+              "title": "Physician Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConsultThread"
+                  },
+                  "title": "Response List Consults Consults Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Consults",
+        "tags": [
+          "consult"
+        ]
+      },
+      "post": {
+        "operationId": "start_consult_consults_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartConsultRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultThread"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Consult",
+        "tags": [
+          "consult"
+        ]
+      }
+    },
+    "/consults/{thread_id}/messages": {
+      "get": {
+        "description": "Full history; marks the other participant's messages as read by `reader_physician_id`.",
+        "operationId": "get_consult_messages_consults__thread_id__messages_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "title": "Thread Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reader_physician_id",
+            "required": true,
+            "schema": {
+              "title": "Reader Physician Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConsultMessage"
+                  },
+                  "title": "Response Get Consult Messages Consults  Thread Id  Messages Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Consult Messages",
+        "tags": [
+          "consult"
+        ]
+      },
+      "post": {
+        "operationId": "send_consult_message_consults__thread_id__messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "title": "Thread Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultMessage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Send Consult Message",
+        "tags": [
+          "consult"
+        ]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "health_health_get",
@@ -1447,6 +1898,113 @@
         "summary": "Patient Summary",
         "tags": [
           "referrals"
+        ]
+      }
+    },
+    "/referrals/{referral_id}/trials": {
+      "get": {
+        "operationId": "list_trials_referrals__referral_id__trials_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Trial"
+                  },
+                  "title": "Response List Trials Referrals  Referral Id  Trials Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "Not parsed, or complexity is not rare_complex"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Trials",
+        "tags": [
+          "trials"
+        ]
+      }
+    },
+    "/referrals/{referral_id}/trials/{trial_id}/approve": {
+      "post": {
+        "description": "The physician's explicit approval to discuss this trial with the patient.",
+        "operationId": "approve_trial_referrals__referral_id__trials__trial_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "title": "Referral Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "trial_id",
+            "required": true,
+            "schema": {
+              "title": "Trial Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveTrialRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Referral"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Approver is not the referring physician"
+          },
+          "422": {
+            "description": "Trial was not in the matched list for this case"
+          }
+        },
+        "summary": "Approve Trial",
+        "tags": [
+          "trials"
         ]
       }
     },

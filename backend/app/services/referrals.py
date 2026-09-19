@@ -20,6 +20,9 @@ from app.models.referral import (
     PatientSummary,
     Referral,
 )
+from app.models.trials import Trial, TrialApproval
+from app.trials.data import trial_by_id
+from app.trials.matcher import match_trials
 
 _EDITABLE = (ReferralStatus.DRAFT, ReferralStatus.MATCHED, ReferralStatus.WAITLISTED)
 
@@ -105,6 +108,34 @@ async def waitlist(repo: Repository, referral_id: str) -> Referral:
     return await repo.save_referral(ref)
 
 
+def matched_trials(ref: Referral) -> list[Trial]:
+    """Trials the physician can discuss with the patient -- surfaced, never sent, until
+    `approve_trial` records an explicit sign-off. Only meaningful once complexity is confirmed
+    as rare/complex (CLAUDE.md: complexity "triggers trial lookup")."""
+    if ref.parsed_case is None:
+        raise HTTPException(409, "Case has not been parsed yet")
+    if ref.complexity != Complexity.RARE_COMPLEX:
+        raise HTTPException(409, "Trial lookup only applies when complexity is rare_complex")
+    return match_trials(ref.parsed_case)
+
+
+async def approve_trial(
+    repo: Repository, referral_id: str, trial_id: str, approved_by: str
+) -> Referral:
+    """The physician's explicit approval to discuss this trial with the patient. Independent of
+    specialist approval/booking -- a trial is a discussion option alongside the referral, not a
+    replacement for it."""
+    ref = await get_or_404(repo, referral_id)
+    if approved_by != ref.referring_physician_id:
+        raise HTTPException(403, "Only the referring physician can approve this referral")
+    if trial_id not in {t.id for t in matched_trials(ref)}:
+        raise HTTPException(422, "Trial was not in the matched list for this case")
+    ref.trial_approval = TrialApproval(
+        trial_id=trial_id, approved_by=approved_by, approved_at=datetime.now(UTC)
+    )
+    return await repo.save_referral(ref)
+
+
 def _cost_note(result: MatchResult | None) -> str | None:
     if result is None:
         return None
@@ -118,6 +149,19 @@ def _cost_note(result: MatchResult | None) -> str | None:
             "Please check with your insurance plan before the visit."
         ),
     }.get(result.insurance.status)
+
+
+def _trial_note(ref: Referral) -> str | None:
+    if ref.trial_approval is None:
+        return None
+    trial = trial_by_id(ref.trial_approval.trial_id)
+    if trial is None:
+        return None
+    return (
+        f'Your doctor has flagged a clinical trial that may be relevant: "{trial.title}" '
+        f"({trial.phase}, {trial.location}). {trial.eligibility_summary} "
+        "Ask your doctor if you'd like to learn more or discuss enrolling."
+    )
 
 
 async def patient_summary(repo: Repository, ref: Referral) -> PatientSummary:
@@ -147,4 +191,5 @@ async def patient_summary(repo: Repository, ref: Referral) -> PatientSummary:
         specialist_name=specialist.name,
         appointment=ref.appointment,
         cost_note=_cost_note(result),
+        trial_note=_trial_note(ref),
     )

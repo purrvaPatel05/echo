@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.routers import directory, referrals
+from app.routers import consult, directory, referrals, trials
 
 app = FastAPI(
     title="ECHO API",
@@ -12,6 +12,8 @@ app = FastAPI(
 
 app.include_router(referrals.router)
 app.include_router(directory.router)
+app.include_router(trials.router)
+app.include_router(consult.router)
 
 
 @app.get("/health", tags=["meta"])

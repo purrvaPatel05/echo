@@ -171,6 +171,22 @@ tests/                            # scenarios.py pins demo rankings; test_contra
 
 Still to build: auth (Auth0 vs Firebase undecided; `referring_physician_id` is passed in the body meanwhile), Postgres verification (only SQLite has been run so far), Redis/Celery verification.
 
+## Member 3 reference — Real-Time Consult + External Integrations
+
+Member 3 owns the peer consult/ping WebSockets, the ClinicalTrials.gov integration, geolocation/distance ranking (PRD suggests Google Maps Distance Matrix API), the mock scheduling service, booking/fallback logic, and insurance/network verification. None of that is built by Member 1 — this section is a map of where it plugs into the backend core, not a spec for how to build it.
+
+### Interfaces to implement (`backend/app/`)
+- **`matching/types.py: CandidateProvider`** — protocol with one method, `candidates_for(patient, specialists) -> list[Candidate]`. Each `Candidate` needs `distance_miles: float`, `insurance: InsuranceCheck` (status + detail string, see the insurance status table above — only `not_accepted` gates), and `earliest_slot: AppointmentSlot | None` / `days_until_slot: int | None`. Implement this against real distance/insurance/scheduling logic, then swap it in for `seed/fixtures.py: FixtureCandidateProvider` at `deps.build_candidate_provider`.
+- **`booking.py: Booker`** — protocol with `book(referral, specialist_id, slot_id) -> Appointment`, raising `SlotUnavailableError` (mapped to HTTP 409) if the slot was taken between matching and approval. Wire it in via `deps.get_booker`. Until this exists, approving a referral records the approval but books nothing.
+- **Trials and consult/ping** have no routes or protocols yet in this API — when ready, add routers/models and a heads-up to Members 1 and 2 since new endpoints extend the committed OpenAPI contract.
+
+### Notes for integrating
+- Insurance status is a status + detail string, not a boolean — return one of `in_network | unverified | out_of_network | not_accepted` plus a human-readable detail (e.g. plan name or reason). Only `not_accepted` should be treated as a hard gate by the matching layer; the other three are scored (see table above) and Member 1's code handles that scoring — just return the correct status.
+- Distance and availability feed directly into scoring curves that are linear and configured in `matching/config.py` (distance 1.0 at ≤5 mi → 0 at ≥50 mi; availability 1.0 same-day → 0 at the urgency-window edge). No need to pre-normalize — just return raw `distance_miles` and slot dates/times.
+- Urgency windows (urgent ≤ 3 days, soon ≤ 14 days, routine ≤ 60 days) are enforced by Member 1's gates, but the scheduling service should still try to surface slots beyond the window rather than omitting them — Member 1 lists those as "available but too late" instead of dropping them.
+- Consult/ping and trials are separate services from matching — they don't need to call into `matching/` or `services/referrals.py`, only the shared OpenAPI contract and data models under `models/`.
+- Keep all mock/synthetic data (no real PHI) and read secrets (API keys, DB URL) from environment variables, consistent with the rest of the repo.
+
 ## Out of scope (don't build unless asked)
 
 - Real EHR/FHIR scheduling (phase 2)

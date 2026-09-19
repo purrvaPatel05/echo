@@ -1,23 +1,40 @@
 """Data access. Returns Pydantic contract models, never ORM rows."""
 
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.booking import SlotUnavailableError
 from app.db.models import (
+    AppointmentRow,
+    ConsultMessageRow,
+    ConsultThreadRow,
     MatchRunRow,
     PatientRow,
     PhysicianRow,
     ReferralRow,
+    SlotRow,
+    SpecialistInsuranceRow,
     SpecialistRow,
 )
-from app.models.enums import Complexity, JobStatus, ReferralStatus, Urgency, WeightProfile
-from app.models.match import MatchResult, MatchRun, TooLateCandidate
+from app.models.consult import ConsultMessage, ConsultThread
+from app.models.enums import (
+    Complexity,
+    InsuranceStatus,
+    JobStatus,
+    ReferralStatus,
+    Urgency,
+    WeightProfile,
+)
+from app.models.match import InsuranceCheck, MatchResult, MatchRun, TooLateCandidate
 from app.models.people import GeoPoint, InsurancePlan, Patient, Physician, Specialist
 from app.models.referral import Approval, ParsedCase, Referral, ReferralCreate
-from app.models.scheduling import Appointment
+from app.models.scheduling import Appointment, AppointmentSlot
+from app.models.trials import TrialApproval
 
 
 def _now() -> datetime:
@@ -72,6 +89,7 @@ def _referral(r: ReferralRow) -> Referral:
         status=ReferralStatus(r.status),
         approval=Approval.model_validate(r.approval) if r.approval else None,
         appointment=Appointment.model_validate(r.appointment) if r.appointment else None,
+        trial_approval=TrialApproval.model_validate(r.trial_approval) if r.trial_approval else None,
         created_at=_utc(r.created_at),
         updated_at=_utc(r.updated_at),
     )
@@ -94,6 +112,42 @@ def _match_run(r: MatchRunRow) -> MatchRun:
 
 def _dump(model) -> dict | None:
     return None if model is None else model.model_dump(mode="json")
+
+
+def _slot(r: SlotRow) -> AppointmentSlot:
+    return AppointmentSlot(
+        id=r.id, specialist_id=r.specialist_id, start=_utc(r.start), end=_utc(r.end)
+    )
+
+
+_UNVERIFIED_DETAIL = (
+    "Coverage with {payer} is unverified for this specialist; confirm with the plan."
+)
+
+
+def _consult_message(r: ConsultMessageRow) -> ConsultMessage:
+    return ConsultMessage(
+        id=r.id,
+        thread_id=r.thread_id,
+        sender_physician_id=r.sender_physician_id,
+        body=r.body,
+        created_at=_utc(r.created_at),
+        read_at=_utc(r.read_at),
+    )
+
+
+def _consult_thread(
+    r: ConsultThreadRow, last_message: ConsultMessage | None = None, unread_count: int = 0
+) -> ConsultThread:
+    return ConsultThread(
+        id=r.id,
+        initiator_physician_id=r.initiator_physician_id,
+        recipient_physician_id=r.recipient_physician_id,
+        referral_id=r.referral_id,
+        created_at=_utc(r.created_at),
+        last_message=last_message,
+        unread_count=unread_count,
+    )
 
 
 class Repository:
@@ -162,6 +216,7 @@ class Repository:
         row.status = ref.status.value
         row.approval = _dump(ref.approval)
         row.appointment = _dump(ref.appointment)
+        row.trial_approval = _dump(ref.trial_approval)
         row.updated_at = _now()
         await self._s.commit()
         return _referral(row)
@@ -206,3 +261,200 @@ class Repository:
         row.completed_at = run.completed_at
         await self._s.commit()
         return _match_run(row)
+
+    # ---- scheduling (Member 3) --------------------------------------------------------------
+
+    async def create_slots(self, slots: Sequence[AppointmentSlot]) -> None:
+        """Idempotent bulk insert, used by seeding. Skips ids already present."""
+        existing = set(await self._s.scalars(select(SlotRow.id)))
+        self._s.add_all(
+            SlotRow(id=s.id, specialist_id=s.specialist_id, start=s.start, end=s.end)
+            for s in slots
+            if s.id not in existing
+        )
+        await self._s.commit()
+
+    async def slot(self, slot_id: str) -> AppointmentSlot | None:
+        row = await self._s.get(SlotRow, slot_id)
+        return _slot(row) if row else None
+
+    async def open_slots(
+        self, specialist_id: str, after: datetime, limit: int | None = None
+    ) -> list[AppointmentSlot]:
+        """Slots for the specialist starting at/after `after` with no appointment against them."""
+        booked = select(AppointmentRow.slot_id)
+        query = (
+            select(SlotRow)
+            .where(SlotRow.specialist_id == specialist_id)
+            .where(SlotRow.start >= after)
+            .where(SlotRow.id.notin_(booked))
+            .order_by(SlotRow.start)
+        )
+        if limit is not None:
+            query = query.limit(limit)
+        rows = await self._s.scalars(query)
+        return [_slot(r) for r in rows]
+
+    async def earliest_open_slot(
+        self, specialist_id: str, after: datetime
+    ) -> AppointmentSlot | None:
+        slots = await self.open_slots(specialist_id, after, limit=1)
+        return slots[0] if slots else None
+
+    async def book_slot(self, slot_id: str, referral_id: str) -> Appointment:
+        """Atomically claims the slot: a unique constraint on `slot_id` makes a second concurrent
+        booking attempt fail at the DB level rather than via an explicit lock."""
+        slot_row = await self._s.get(SlotRow, slot_id)
+        if slot_row is None:
+            raise SlotUnavailableError(f"Slot {slot_id} does not exist")
+        appt_row = AppointmentRow(
+            id=_new_id("appt"),
+            slot_id=slot_id,
+            referral_id=referral_id,
+            status=ReferralStatus.BOOKED.value,
+            created_at=_now(),
+        )
+        self._s.add(appt_row)
+        try:
+            await self._s.commit()
+        except IntegrityError:
+            await self._s.rollback()
+            raise SlotUnavailableError(f"Slot {slot_id} is already booked") from None
+        return Appointment(
+            id=appt_row.id,
+            referral_id=referral_id,
+            slot=_slot(slot_row),
+            status=ReferralStatus.BOOKED,
+        )
+
+    # ---- insurance network (Member 3) -------------------------------------------------------
+
+    async def create_insurance_status(
+        self, specialist_id: str, payer: str, status: InsuranceStatus, detail: str
+    ) -> None:
+        """Idempotent upsert-by-lookup, used by seeding."""
+        row = await self._s.scalar(
+            select(SpecialistInsuranceRow).where(
+                SpecialistInsuranceRow.specialist_id == specialist_id,
+                SpecialistInsuranceRow.payer == payer,
+            )
+        )
+        if row is None:
+            self._s.add(
+                SpecialistInsuranceRow(
+                    id=_new_id("ins"),
+                    specialist_id=specialist_id,
+                    payer=payer,
+                    status=status.value,
+                    detail=detail,
+                )
+            )
+            await self._s.commit()
+
+    async def insurance_status(self, specialist_id: str, payer: str) -> InsuranceCheck:
+        row = await self._s.scalar(
+            select(SpecialistInsuranceRow).where(
+                SpecialistInsuranceRow.specialist_id == specialist_id,
+                SpecialistInsuranceRow.payer == payer,
+            )
+        )
+        if row is None:
+            return InsuranceCheck(
+                status=InsuranceStatus.UNVERIFIED, detail=_UNVERIFIED_DETAIL.format(payer=payer)
+            )
+        return InsuranceCheck(status=InsuranceStatus(row.status), detail=row.detail)
+
+    # ---- peer consult (Member 3) -------------------------------------------------------------
+
+    async def create_consult_thread(
+        self, initiator_physician_id: str, recipient_physician_id: str, referral_id: str | None
+    ) -> ConsultThread:
+        row = ConsultThreadRow(
+            id=_new_id("consult"),
+            initiator_physician_id=initiator_physician_id,
+            recipient_physician_id=recipient_physician_id,
+            referral_id=referral_id,
+            created_at=_now(),
+        )
+        self._s.add(row)
+        await self._s.commit()
+        return _consult_thread(row)
+
+    async def consult_thread(self, thread_id: str) -> ConsultThread | None:
+        row = await self._s.get(ConsultThreadRow, thread_id)
+        return _consult_thread(row) if row else None
+
+    async def threads_for(self, physician_id: str) -> list[ConsultThread]:
+        """Threads the physician is a participant in, newest first, each with its last message
+        and an unread count relative to `physician_id`."""
+        rows = await self._s.scalars(
+            select(ConsultThreadRow)
+            .where(
+                or_(
+                    ConsultThreadRow.initiator_physician_id == physician_id,
+                    ConsultThreadRow.recipient_physician_id == physician_id,
+                )
+            )
+            .order_by(ConsultThreadRow.created_at.desc())
+        )
+        threads = []
+        for row in rows:
+            last = await self._s.scalar(
+                select(ConsultMessageRow)
+                .where(ConsultMessageRow.thread_id == row.id)
+                .order_by(ConsultMessageRow.created_at.desc())
+                .limit(1)
+            )
+            unread = await self._s.scalar(
+                select(func.count())
+                .select_from(ConsultMessageRow)
+                .where(
+                    ConsultMessageRow.thread_id == row.id,
+                    ConsultMessageRow.sender_physician_id != physician_id,
+                    ConsultMessageRow.read_at.is_(None),
+                )
+            )
+            threads.append(
+                _consult_thread(
+                    row,
+                    last_message=_consult_message(last) if last else None,
+                    unread_count=unread or 0,
+                )
+            )
+        return threads
+
+    async def create_consult_message(
+        self, thread_id: str, sender_physician_id: str, body: str
+    ) -> ConsultMessage:
+        row = ConsultMessageRow(
+            id=_new_id("cmsg"),
+            thread_id=thread_id,
+            sender_physician_id=sender_physician_id,
+            body=body,
+            created_at=_now(),
+        )
+        self._s.add(row)
+        await self._s.commit()
+        return _consult_message(row)
+
+    async def consult_messages(self, thread_id: str) -> list[ConsultMessage]:
+        rows = await self._s.scalars(
+            select(ConsultMessageRow)
+            .where(ConsultMessageRow.thread_id == thread_id)
+            .order_by(ConsultMessageRow.created_at)
+        )
+        return [_consult_message(r) for r in rows]
+
+    async def mark_consult_read(self, thread_id: str, reader_physician_id: str) -> None:
+        """Marks every message in the thread not sent by the reader as read by them."""
+        rows = await self._s.scalars(
+            select(ConsultMessageRow).where(
+                ConsultMessageRow.thread_id == thread_id,
+                ConsultMessageRow.sender_physician_id != reader_physician_id,
+                ConsultMessageRow.read_at.is_(None),
+            )
+        )
+        now = _now()
+        for row in rows:
+            row.read_at = now
+        await self._s.commit()

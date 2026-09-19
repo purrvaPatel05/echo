@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from app.models.enums import Urgency
+from app.models.enums import InsuranceStatus, Urgency
 from app.models.people import GeoPoint, InsurancePlan, Patient, Physician, Specialist
 
 PHYSICIANS = [
@@ -182,6 +182,59 @@ SPECIALISTS = [
         -71.0567,
     ),
 ]
+
+
+# Fraction of each specialist's slots that are pre-booked/blocked at seed time (Member 3's mock
+# scheduling service, app.scheduling.generator) -- higher means a busier, sparser calendar. Values
+# are hand-picked so the demo shows both: a distant rare-disease expert worth the wait, and a
+# nearby generalist with fast access.
+SPECIALIST_FILL_RATE: dict[str, float] = {
+    "sp_chen": 0.55,
+    "sp_park": 0.45,
+    "sp_okafor": 0.15,
+    "sp_ortiz": 0.35,
+    "sp_bhatt": 0.85,  # distant neuromuscular expert: busy, but the right referral
+    "sp_wu": 0.25,
+    "sp_adams": 0.5,
+    "sp_novak": 0.6,
+    "sp_reyes": 0.4,
+    "sp_holt": 0.7,  # out-of-network expert: busy too
+    "sp_lin": 0.3,
+    "sp_meyer": 0.4,
+}
+
+# Mocked payer-network status per (specialist_id, payer) -- Member 3's insurance verification.
+# A lookup, not a live call: there is no real payer API in this hackathon. Pairs not listed here
+# default to `unverified` (Repository.insurance_status), matching what a real integration would
+# return when it has no contracting data for that pair.
+INSURANCE_NETWORK: dict[tuple[str, str], tuple[InsuranceStatus, str]] = {
+    ("sp_chen", "Aetna"): (InsuranceStatus.IN_NETWORK, "In-network with Aetna PPO Choice"),
+    ("sp_park", "Aetna"): (InsuranceStatus.IN_NETWORK, "In-network with Aetna PPO Choice"),
+    ("sp_okafor", "Aetna"): (InsuranceStatus.IN_NETWORK, "In-network with Aetna PPO Choice"),
+    ("sp_meyer", "Aetna"): (InsuranceStatus.IN_NETWORK, "In-network with Aetna PPO Choice"),
+    ("sp_bhatt", "Blue Cross"): (InsuranceStatus.IN_NETWORK, "In-network with Blue Cross HMO Blue"),
+    ("sp_ortiz", "Blue Cross"): (InsuranceStatus.IN_NETWORK, "In-network with Blue Cross HMO Blue"),
+    ("sp_novak", "Blue Cross"): (InsuranceStatus.IN_NETWORK, "In-network with Blue Cross HMO Blue"),
+    ("sp_adams", "Cigna"): (InsuranceStatus.IN_NETWORK, "In-network with Cigna Open Access Plus"),
+    ("sp_wu", "Cigna"): (InsuranceStatus.IN_NETWORK, "In-network with Cigna Open Access Plus"),
+    ("sp_novak", "Cigna"): (InsuranceStatus.IN_NETWORK, "In-network with Cigna Open Access Plus"),
+    ("sp_holt", "Medicare"): (
+        InsuranceStatus.OUT_OF_NETWORK,
+        "Out-of-network with Medicare Advantage Plan; patient may pay more",
+    ),
+    ("sp_reyes", "Medicare"): (
+        InsuranceStatus.IN_NETWORK,
+        "In-network with Medicare Advantage Plan",
+    ),
+    ("sp_lin", "Medicare"): (
+        InsuranceStatus.NOT_ACCEPTED,
+        "Does not accept Medicare Advantage Plan",
+    ),
+    ("sp_okafor", "UnitedHealthcare"): (
+        InsuranceStatus.IN_NETWORK,
+        "In-network with UnitedHealthcare Choice",
+    ),
+}
 
 
 @dataclass(frozen=True)
