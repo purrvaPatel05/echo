@@ -40,5 +40,6 @@ app.include_router(echo_router)  # /api/echo/*: the ECHO frontend's contract
 
 
 @app.get("/health", tags=["meta"])
+@app.get("/api/health", tags=["meta"])
 async def health() -> dict[str, str]:
     return {"status": "ok"}
