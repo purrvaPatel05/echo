@@ -1,68 +1,90 @@
-# openEvidence
+# ECHO
 
-Mock referral app: physicians find and refer to specialists, get trial matches, and ping each other in real time.
-Everything runs on in-memory fake data so the team shares one working baseline. Swap pieces for the real thing one seam at a time.
+Physician-first referral navigation. A referring physician submits a case; ECHO reads it, finds and ranks
+nearby specialists with the evidence behind each match, checks availability, and books only after the physician
+approves. **Nothing is sent or booked without the physician's explicit approval.**
 
-| Layer | Tech |
+| Part | What it is |
 |---|---|
-| Backend | FastAPI, python-socketio (WebSockets), Pydantic |
-| Frontend | React + Vite + TypeScript, Tailwind v4, shadcn/ui-style components, TanStack Query, socket.io-client |
-| Contract | `openapi.json` (generated from the FastAPI models) -> TS types via openapi-typescript |
-| CI | GitHub Actions: ruff + pytest, oxlint + build, and checks that the generated spec/types are committed |
+| `backend/` | FastAPI + SQLAlchemy (async), Alembic migrations, Claude-based matching with a rules-only fallback, mock scheduling/insurance/trials, Auth0 or dev-header auth |
+| `frontend/` | React + Vite + TypeScript, Tailwind v4, TanStack Query. Runs on an in-browser mock **or** the real backend |
+| `docs/` | The frontend's API contract, the compatibility notes, and the backend handoff/auth guides |
 
 ## Run it
 
-```bash
-# terminal 1 -- API + Socket.IO on :8000
-cd backend
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements-dev.txt
-uvicorn app.main:app --reload --port 8000
+The backend needs Python 3.12 and [`uv`](https://docs.astral.sh/uv/). Node 22 for the frontend.
 
-# terminal 2 -- UI on :5173 (proxies /api and /socket.io to :8000)
+```bash
+# 1. Backend on :8000 (SQLite file, no Docker needed)
+cd backend
+uv sync
+cat > .env <<'EOF'             # backend/.env: local settings (git-ignored); every option is in backend/app/config.py
+DATABASE_URL=sqlite+aiosqlite:///./echo.db
+AUTH_MODE=dev
+EOF
+uv run alembic upgrade head && uv run python -m app.seed
+uv run uvicorn app.main:app --reload --port 8000
+
+# 2. Frontend on :5173 (proxies /api to :8000)
 cd frontend
 npm install
+echo 'VITE_USE_MOCK=false' > .env   # frontend/.env: false = real backend, true (default) = in-browser mock
 npm run dev
 ```
 
-Swagger UI: http://localhost:8000/docs
+- **Mock or real:** with `VITE_USE_MOCK=true` the ECHO screens need no backend at all. With `false` they call the
+  backend's `/api/echo/*` endpoints. Restart `npm run dev` after changing it.
+- **Postgres instead of SQLite:** `docker compose up -d`, then in `backend/.env` use
+  `DATABASE_URL=postgresql+asyncpg://echo:echo@localhost:5432/echo` (also the default if you set nothing).
+- **Real Claude matching:** set `ANTHROPIC_API_KEY` in `backend/.env`. Without it a keyword fallback is used and results
+  are less accurate. `GOOGLE_MAPS_API_KEY` is optional too (without it, distances are straight-line).
+- **Sign-in page:** set `AUTH_MODE=session` with `SESSION_SECRET` and `DEMO_PASSWORD` (see `backend/.env.example`) and the app shows a login
+  page; each demo doctor has their own referrals and conversations. Mock mode and `AUTH_MODE=dev` have no login.
+- **Login:** the backend defaults to `AUTH_MODE=auth0` and refuses requests until Auth0 is configured, so local runs set
+  `AUTH_MODE=dev`, which needs no login (requests act as `DEV_DEFAULT_PHYSICIAN`, or the `X-Dev-Physician` header).
+  `auth0` mode needs a real token; see [`docs/backend-handoff/AUTH.md`](docs/backend-handoff/AUTH.md).
+- Swagger UI for the core API is at http://localhost:8000/docs.
 
-## Try it
+## Deploying
 
-1. **Cases** -> open the seeded case: notes are parsed, specialists ranked, trials listed.
-2. **Refer** -> the Referrals page shows `pending`, then flips to `accepted` about 4s later via a live socket push. Pick a slot to book.
-3. **Consults** -> message a specialist; a canned reply comes back over the socket.
+See [`docs/deployment-readiness.md`](docs/deployment-readiness.md): required settings, how authentication works in the cloud
+(the frontend cannot log in, so a public demo uses the explicit `AUTH_MODE=demo`), the proposed proxy config, and what is unverified.
+Every backend setting is documented in [`backend/.env.example`](backend/.env.example).
 
-## Changing the API (contract-first workflow)
+## How the pieces fit
 
-1. Edit the Pydantic models / routes in `backend/app`.
-2. `cd backend && python -m app.export_openapi` -> updates `openapi.json`.
-3. `cd frontend && npm run gen:api` -> updates `src/api/schema.d.ts`.
-4. Commit all of it. CI fails if they drift.
+The frontend was designed first, against [`docs/echo-api-contract-changes.md`](docs/echo-api-contract-changes.md)
+(`/api/echo/*`, camelCase). The backend has its own core API (`/referrals`, `/consults`, ...). The **compatibility layer**
+in `backend/app/echo/` serves the frontend's contract on top of the core domain, without changing the frontend.
+Every place the two were reconciled is listed in [`docs/echo-compat-notes.md`](docs/echo-compat-notes.md), including the
+one to know about: **complexity is auto-accepted from the parser's suggestion** because the frontend has no confirm step.
 
-Frontend never hand-writes API types; import them from `src/api/client.ts`.
+## The two OpenAPI files
 
-## What's mocked, and where the real thing plugs in
-
-| Mock | File | Real replacement |
+| File | Describes | Used by |
 |---|---|---|
-| In-memory data | `backend/app/store.py` | SQLAlchemy + Vultr Managed PostgreSQL (`docker-compose.yml` has local Postgres/Redis) |
-| Case parsing | `services/matching.py: parse_case` | Claude API |
-| Specialist ranking | `services/matching.py: rank_specialists` | Claude for fit; keep `passes_guardrails` (rules layer) as-is |
-| Trials | `services/matching.py: find_trials` | ClinicalTrials.gov API v2 |
-| Distance | `services/matching.py: distance_km` | Google Maps Distance Matrix |
-| Sync matching | `routers/api.py: match_case` | Celery task + job-status polling (see `useMatch` in `frontend/src/api/hooks.ts`) |
-| Logged-in user | `store.CURRENT_USER`, `GET /api/me` | Auth0 / Firebase + role claims |
-| Scheduling | `store.SLOTS` | Stays a Postgres table for MVP |
-| Specialist accepting referral | `_mock_specialist_accepts` | Specialist-side UI calling `PATCH /referrals/{id}/status` |
+| `backend/openapi.json` | The backend's core API (generated: `cd backend && uv run python -m app.export_openapi`) | Backend CI checks it is up to date |
+| `openapi.json` (repo root) | The **old prototype API**, kept frozen | The frontend's `npm run gen:api` and its legacy client types (`frontend/src/api/schema.d.ts`); frontend CI checks those |
 
-## Adding shadcn components
-
-`components.json` is configured, so `npx shadcn@latest add dialog` works. The few components already in `src/components/ui` are hand-copied in the same style.
+The `/api/echo/*` endpoints are documented in `docs/echo-api-contract-changes.md`, not in either OpenAPI file. When the
+frontend's legacy client is retired, point `gen:api` at `../backend/openapi.json` and delete the root file.
 
 ## Tests
 
 ```bash
-cd backend && pytest
+cd backend && uv run ruff check . && uv run pytest         # core API, migrations, the /api/echo contract, config checks
 cd frontend && npm run lint && npm run build
 ```
+
+CI (`.github/workflows/ci.yml`) runs both. The backend job also fails if `backend/openapi.json` is stale; the frontend job
+fails if `src/api/schema.d.ts` no longer matches the root `openapi.json`.
+
+## What is mocked
+
+| Area | Status |
+|---|---|
+| Patients, specialists, calendars, insurance networks, clinical trials | Synthetic seed data (`backend/app/seed`, `backend/app/trials`). Trial NCT ids are made up, so their ClinicalTrials.gov links do not resolve |
+| Distance | Straight-line, or Google Maps if a key is set |
+| Case reading and specialist fit | Claude if a key is set, otherwise a keyword fallback |
+| Patient notification and confirmation | **Not implemented.** "Sent to patient" is only a timeline event; a dev-only endpoint stands in for the patient's answer |
+| Consult delivery | Messages are saved; live delivery over a WebSocket needs Redis and is best effort |

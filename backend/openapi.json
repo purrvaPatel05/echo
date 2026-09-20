@@ -1,0 +1,2344 @@
+{
+  "components": {
+    "schemas": {
+      "Appointment": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "referral_id": {
+            "title": "Referral Id",
+            "type": "string"
+          },
+          "slot": {
+            "$ref": "#/components/schemas/AppointmentSlot"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReferralStatus"
+          }
+        },
+        "required": [
+          "id",
+          "referral_id",
+          "slot",
+          "status"
+        ],
+        "title": "Appointment",
+        "type": "object"
+      },
+      "AppointmentSlot": {
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "specialist_id": {
+            "title": "Specialist Id",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "specialist_id",
+          "start",
+          "end"
+        ],
+        "title": "AppointmentSlot",
+        "type": "object"
+      },
+      "Approval": {
+        "properties": {
+          "approved_at": {
+            "format": "date-time",
+            "title": "Approved At",
+            "type": "string"
+          },
+          "approved_by": {
+            "title": "Approved By",
+            "type": "string"
+          },
+          "slot_id": {
+            "title": "Slot Id",
+            "type": "string"
+          },
+          "specialist_id": {
+            "title": "Specialist Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "specialist_id",
+          "slot_id",
+          "approved_by",
+          "approved_at"
+        ],
+        "title": "Approval",
+        "type": "object"
+      },
+      "ApproveRequest": {
+        "description": "The physician's explicit approval. Booking happens only as a result of this call.",
+        "properties": {
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          },
+          "match_run_id": {
+            "title": "Match Run Id",
+            "type": "string"
+          },
+          "slot_id": {
+            "title": "Slot Id",
+            "type": "string"
+          },
+          "specialist_id": {
+            "title": "Specialist Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "match_run_id",
+          "specialist_id",
+          "slot_id"
+        ],
+        "title": "ApproveRequest",
+        "type": "object"
+      },
+      "ApproveTrialRequest": {
+        "description": "The physician's explicit approval to surface this trial to the patient.",
+        "properties": {
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          }
+        },
+        "title": "ApproveTrialRequest",
+        "type": "object"
+      },
+      "ClinicalFit": {
+        "properties": {
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "tier": {
+            "$ref": "#/components/schemas/FitTier"
+          }
+        },
+        "required": [
+          "tier",
+          "rationale"
+        ],
+        "title": "ClinicalFit",
+        "type": "object"
+      },
+      "Complexity": {
+        "description": "Claude proposes this at parse time; the physician confirms or overrides before matching.",
+        "enum": [
+          "routine",
+          "rare_complex"
+        ],
+        "title": "Complexity",
+        "type": "string"
+      },
+      "ConsultMessage": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "sender_physician_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender Physician Id"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "thread_id",
+          "body",
+          "created_at"
+        ],
+        "title": "ConsultMessage",
+        "type": "object"
+      },
+      "ConsultThread": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "initiator_physician_id": {
+            "title": "Initiator Physician Id",
+            "type": "string"
+          },
+          "last_message": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsultMessage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recipient_physician_id": {
+            "title": "Recipient Physician Id",
+            "type": "string"
+          },
+          "referral_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referral Id"
+          },
+          "unread_count": {
+            "default": 0,
+            "title": "Unread Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "initiator_physician_id",
+          "recipient_physician_id",
+          "created_at"
+        ],
+        "title": "ConsultThread",
+        "type": "object"
+      },
+      "FactorName": {
+        "enum": [
+          "clinical_fit",
+          "insurance",
+          "distance",
+          "availability"
+        ],
+        "title": "FactorName",
+        "type": "string"
+      },
+      "FactorResult": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "factor": {
+            "$ref": "#/components/schemas/FactorName"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/Verdict"
+          },
+          "weight": {
+            "title": "Weight",
+            "type": "number"
+          }
+        },
+        "required": [
+          "factor",
+          "verdict",
+          "score",
+          "weight",
+          "detail"
+        ],
+        "title": "FactorResult",
+        "type": "object"
+      },
+      "FitTier": {
+        "description": "Claude's clinical-fit judgment for a (case, specialist) pair.",
+        "enum": [
+          "excellent",
+          "good",
+          "partial",
+          "poor"
+        ],
+        "title": "FitTier",
+        "type": "string"
+      },
+      "GeoPoint": {
+        "properties": {
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lng": {
+            "title": "Lng",
+            "type": "number"
+          }
+        },
+        "required": [
+          "lat",
+          "lng"
+        ],
+        "title": "GeoPoint",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "InsuranceCheck": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InsuranceStatus"
+          }
+        },
+        "required": [
+          "status",
+          "detail"
+        ],
+        "title": "InsuranceCheck",
+        "type": "object"
+      },
+      "InsurancePlan": {
+        "properties": {
+          "payer": {
+            "title": "Payer",
+            "type": "string"
+          },
+          "plan_name": {
+            "title": "Plan Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "payer",
+          "plan_name"
+        ],
+        "title": "InsurancePlan",
+        "type": "object"
+      },
+      "InsuranceStatus": {
+        "enum": [
+          "in_network",
+          "unverified",
+          "out_of_network",
+          "not_accepted"
+        ],
+        "title": "InsuranceStatus",
+        "type": "string"
+      },
+      "JobStatus": {
+        "enum": [
+          "queued",
+          "running",
+          "complete",
+          "failed"
+        ],
+        "title": "JobStatus",
+        "type": "string"
+      },
+      "MatchResult": {
+        "properties": {
+          "clinical_fit": {
+            "$ref": "#/components/schemas/ClinicalFit"
+          },
+          "days_until_slot": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Until Slot"
+          },
+          "distance_miles": {
+            "title": "Distance Miles",
+            "type": "number"
+          },
+          "earliest_slot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AppointmentSlot"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/FactorResult"
+            },
+            "title": "Factors",
+            "type": "array"
+          },
+          "insurance": {
+            "$ref": "#/components/schemas/InsuranceCheck"
+          },
+          "match_percent": {
+            "title": "Match Percent",
+            "type": "integer"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "specialist": {
+            "$ref": "#/components/schemas/Specialist"
+          },
+          "why_not_first": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Why Not First"
+          }
+        },
+        "required": [
+          "rank",
+          "specialist",
+          "match_percent",
+          "clinical_fit",
+          "insurance",
+          "distance_miles",
+          "earliest_slot",
+          "days_until_slot",
+          "factors",
+          "explanation"
+        ],
+        "title": "MatchResult",
+        "type": "object"
+      },
+      "MatchRun": {
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "degraded": {
+            "default": false,
+            "title": "Degraded",
+            "type": "boolean"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "referral_id": {
+            "title": "Referral Id",
+            "type": "string"
+          },
+          "results": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/MatchResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "too_late": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TooLateCandidate"
+            },
+            "title": "Too Late",
+            "type": "array"
+          },
+          "weight_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeightProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "referral_id",
+          "status",
+          "created_at"
+        ],
+        "title": "MatchRun",
+        "type": "object"
+      },
+      "ParsedCase": {
+        "description": "Claude's (or the rules fallback's) reading of the case notes. Suggestions only:\nthe physician confirms urgency and complexity before matching.",
+        "properties": {
+          "condition_summary": {
+            "title": "Condition Summary",
+            "type": "string"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "red_flags": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Red Flags",
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "claude",
+              "rules_fallback"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "subspecialty_tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Subspecialty Tags",
+            "type": "array"
+          },
+          "suggested_complexity": {
+            "$ref": "#/components/schemas/Complexity"
+          },
+          "suggested_specialties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Suggested Specialties",
+            "type": "array"
+          },
+          "suggested_urgency": {
+            "$ref": "#/components/schemas/Urgency"
+          }
+        },
+        "required": [
+          "condition_summary",
+          "suggested_specialties",
+          "subspecialty_tags",
+          "suggested_urgency",
+          "suggested_complexity",
+          "rationale",
+          "source"
+        ],
+        "title": "ParsedCase",
+        "type": "object"
+      },
+      "Patient": {
+        "description": "Synthetic patient. Never put real PHI here.",
+        "properties": {
+          "age": {
+            "title": "Age",
+            "type": "integer"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "insurance": {
+            "$ref": "#/components/schemas/InsurancePlan"
+          },
+          "location": {
+            "$ref": "#/components/schemas/GeoPoint"
+          },
+          "zip_code": {
+            "title": "Zip Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "age",
+          "zip_code",
+          "location",
+          "insurance"
+        ],
+        "title": "Patient",
+        "type": "object"
+      },
+      "PatientSummary": {
+        "properties": {
+          "appointment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Appointment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cost_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Note"
+          },
+          "referral_id": {
+            "title": "Referral Id",
+            "type": "string"
+          },
+          "specialist_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specialist Name"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "trial_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Note"
+          }
+        },
+        "required": [
+          "referral_id",
+          "summary"
+        ],
+        "title": "PatientSummary",
+        "type": "object"
+      },
+      "Physician": {
+        "description": "A referring physician (synthetic). Stands in for the authenticated user until auth lands.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "practice_name": {
+            "title": "Practice Name",
+            "type": "string"
+          },
+          "specialty": {
+            "title": "Specialty",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "specialty",
+          "practice_name"
+        ],
+        "title": "Physician",
+        "type": "object"
+      },
+      "Referral": {
+        "properties": {
+          "appointment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Appointment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Approval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "case_notes": {
+            "title": "Case Notes",
+            "type": "string"
+          },
+          "complexity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Complexity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "parsed_case": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParsedCase"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "referring_physician_id": {
+            "title": "Referring Physician Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReferralStatus"
+          },
+          "trial_approval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrialApproval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "urgency": {
+            "$ref": "#/components/schemas/Urgency"
+          }
+        },
+        "required": [
+          "id",
+          "patient_id",
+          "referring_physician_id",
+          "case_notes",
+          "urgency",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "Referral",
+        "type": "object"
+      },
+      "ReferralCreate": {
+        "examples": [
+          {
+            "case_notes": "58F, 3 months progressive right knee pain, worse on stairs. Swelling after activity. No trauma. X-ray shows joint space narrowing.",
+            "patient_id": "pat_001",
+            "urgency": "routine"
+          }
+        ],
+        "properties": {
+          "case_notes": {
+            "minLength": 1,
+            "title": "Case Notes",
+            "type": "string"
+          },
+          "patient_id": {
+            "title": "Patient Id",
+            "type": "string"
+          },
+          "referring_physician_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referring Physician Id"
+          },
+          "urgency": {
+            "$ref": "#/components/schemas/Urgency",
+            "default": "routine"
+          }
+        },
+        "required": [
+          "patient_id",
+          "case_notes"
+        ],
+        "title": "ReferralCreate",
+        "type": "object"
+      },
+      "ReferralStatus": {
+        "description": "approved/booked require an explicit physician action.",
+        "enum": [
+          "draft",
+          "matched",
+          "approved",
+          "booked",
+          "waitlisted",
+          "cancelled"
+        ],
+        "title": "ReferralStatus",
+        "type": "string"
+      },
+      "ReferralUpdate": {
+        "description": "Physician confirmation/override. Matching requires both to be set (409 otherwise).",
+        "properties": {
+          "complexity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Complexity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "urgency": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Urgency"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "ReferralUpdate",
+        "type": "object"
+      },
+      "SendMessageRequest": {
+        "properties": {
+          "body": {
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "sender_physician_id": {
+            "title": "Sender Physician Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sender_physician_id",
+          "body"
+        ],
+        "title": "SendMessageRequest",
+        "type": "object"
+      },
+      "Specialist": {
+        "properties": {
+          "address": {
+            "title": "Address",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "location": {
+            "$ref": "#/components/schemas/GeoPoint"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "practice_name": {
+            "title": "Practice Name",
+            "type": "string"
+          },
+          "specialty": {
+            "title": "Specialty",
+            "type": "string"
+          },
+          "subspecialties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Subspecialties",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "specialty",
+          "subspecialties",
+          "practice_name",
+          "address",
+          "location"
+        ],
+        "title": "Specialist",
+        "type": "object"
+      },
+      "StartConsultRequest": {
+        "properties": {
+          "body": {
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "from_physician_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Physician Id"
+          },
+          "referral_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referral Id"
+          },
+          "to_physician_id": {
+            "title": "To Physician Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "to_physician_id",
+          "body"
+        ],
+        "title": "StartConsultRequest",
+        "type": "object"
+      },
+      "TooLateCandidate": {
+        "description": "Passed every other gate but the earliest slot is outside the urgency window.",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "earliest_slot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AppointmentSlot"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "specialist": {
+            "$ref": "#/components/schemas/Specialist"
+          }
+        },
+        "required": [
+          "specialist",
+          "earliest_slot",
+          "detail"
+        ],
+        "title": "TooLateCandidate",
+        "type": "object"
+      },
+      "Trial": {
+        "properties": {
+          "condition": {
+            "title": "Condition",
+            "type": "string"
+          },
+          "condition_keywords": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Condition Keywords",
+            "type": "array"
+          },
+          "eligibility_summary": {
+            "title": "Eligibility Summary",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "location": {
+            "title": "Location",
+            "type": "string"
+          },
+          "nct_id": {
+            "title": "Nct Id",
+            "type": "string"
+          },
+          "phase": {
+            "title": "Phase",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nct_id",
+          "title",
+          "phase",
+          "condition",
+          "condition_keywords",
+          "summary",
+          "eligibility_summary",
+          "location"
+        ],
+        "title": "Trial",
+        "type": "object"
+      },
+      "TrialApproval": {
+        "properties": {
+          "approved_at": {
+            "format": "date-time",
+            "title": "Approved At",
+            "type": "string"
+          },
+          "approved_by": {
+            "title": "Approved By",
+            "type": "string"
+          },
+          "trial_id": {
+            "title": "Trial Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trial_id",
+          "approved_by",
+          "approved_at"
+        ],
+        "title": "TrialApproval",
+        "type": "object"
+      },
+      "Urgency": {
+        "enum": [
+          "routine",
+          "soon",
+          "urgent"
+        ],
+        "title": "Urgency",
+        "type": "string"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "Verdict": {
+        "description": "How the UI renders a factor line: \u2713 / \u26a0 / ?",
+        "enum": [
+          "good",
+          "caution",
+          "unknown"
+        ],
+        "title": "Verdict",
+        "type": "string"
+      },
+      "WeightProfile": {
+        "enum": [
+          "routine",
+          "urgent",
+          "rare_complex",
+          "urgent_rare_complex"
+        ],
+        "title": "WeightProfile",
+        "type": "string"
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "description": "Dev mode only (AUTH_MODE=dev): act as this physician id, e.g. doc_001",
+        "in": "header",
+        "name": "X-Dev-Physician",
+        "type": "apiKey"
+      },
+      "HTTPBearer": {
+        "description": "Auth0 access token",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Physician-first referral matching. Nothing is sent or booked without physician approval.",
+    "title": "ECHO API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/consults": {
+      "get": {
+        "description": "The signed-in physician's threads, each with its last message and unread count.\n`physician_id` is optional; if sent it must be the signed-in physician.",
+        "operationId": "list_consults_consults_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "physician_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Physician Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConsultThread"
+                  },
+                  "title": "Response List Consults Consults Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "List Consults",
+        "tags": [
+          "consult"
+        ]
+      },
+      "post": {
+        "operationId": "start_consult_consults_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartConsultRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultThread"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Start Consult",
+        "tags": [
+          "consult"
+        ]
+      }
+    },
+    "/consults/{thread_id}/messages": {
+      "get": {
+        "description": "Full history; marks the other participant's messages as read by the signed-in physician.\n`reader_physician_id` is optional; if sent it must be the signed-in physician.",
+        "operationId": "get_consult_messages_consults__thread_id__messages_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "title": "Thread Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reader_physician_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reader Physician Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConsultMessage"
+                  },
+                  "title": "Response Get Consult Messages Consults  Thread Id  Messages Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Get Consult Messages",
+        "tags": [
+          "consult"
+        ]
+      },
+      "post": {
+        "operationId": "send_consult_message_consults__thread_id__messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "title": "Thread Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultMessage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Send Consult Message",
+        "tags": [
+          "consult"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Health Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/patients": {
+      "get": {
+        "operationId": "list_patients_patients_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Patient"
+                  },
+                  "title": "Response List Patients Patients Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "List Patients",
+        "tags": [
+          "directory"
+        ]
+      }
+    },
+    "/patients/{patient_id}": {
+      "get": {
+        "operationId": "get_patient_patients__patient_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "patient_id",
+            "required": true,
+            "schema": {
+              "title": "Patient Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Patient"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Get Patient",
+        "tags": [
+          "directory"
+        ]
+      }
+    },
+    "/physicians": {
+      "get": {
+        "operationId": "list_physicians_physicians_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Physician"
+                  },
+                  "title": "Response List Physicians Physicians Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "List Physicians",
+        "tags": [
+          "directory"
+        ]
+      }
+    },
+    "/referrals": {
+      "get": {
+        "description": "The signed-in physician's referrals (an admin sees everyone's).",
+        "operationId": "list_referrals_referrals_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Referral"
+                  },
+                  "title": "Response List Referrals Referrals Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "List Referrals",
+        "tags": [
+          "referrals"
+        ]
+      },
+      "post": {
+        "operationId": "create_referral_referrals_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReferralCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Referral"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Create Referral",
+        "tags": [
+          "referrals"
+        ]
+      }
+    },
+    "/referrals/{referral_id}": {
+      "get": {
+        "operationId": "get_referral_referrals__referral_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Referral"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Get Referral",
+        "tags": [
+          "referrals"
+        ]
+      },
+      "patch": {
+        "description": "Physician confirms or overrides urgency and complexity.",
+        "operationId": "confirm_referral_referrals__referral_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReferralUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Referral"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Confirm Referral",
+        "tags": [
+          "referrals"
+        ]
+      }
+    },
+    "/referrals/{referral_id}/approve": {
+      "post": {
+        "description": "The physician's explicit approval. This is the only path that approves or books.",
+        "operationId": "approve_and_book_referrals__referral_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Referral"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Approver is not the referring physician"
+          },
+          "409": {
+            "description": "Stale match run, or slot no longer available; re-run matching"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Approve And Book",
+        "tags": [
+          "referrals"
+        ]
+      }
+    },
+    "/referrals/{referral_id}/match": {
+      "get": {
+        "description": "Latest match run for the referral; poll until status is complete or failed.",
+        "operationId": "get_latest_match_referrals__referral_id__match_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Get Latest Match",
+        "tags": [
+          "referrals"
+        ]
+      },
+      "post": {
+        "operationId": "start_match_referrals__referral_id__match_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "Not parsed, or complexity not yet confirmed by the physician"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Start Match",
+        "tags": [
+          "referrals"
+        ]
+      }
+    },
+    "/referrals/{referral_id}/parse": {
+      "post": {
+        "description": "Queue case parsing. Poll GET /referrals/{id} until `parsed_case` is set.",
+        "operationId": "parse_referral_referrals__referral_id__parse_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Referral"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Parse Referral",
+        "tags": [
+          "referrals"
+        ]
+      }
+    },
+    "/referrals/{referral_id}/patient-summary": {
+      "get": {
+        "operationId": "patient_summary_referrals__referral_id__patient_summary_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Patient Summary",
+        "tags": [
+          "referrals"
+        ]
+      }
+    },
+    "/referrals/{referral_id}/trials": {
+      "get": {
+        "operationId": "list_trials_referrals__referral_id__trials_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Trial"
+                  },
+                  "title": "Response List Trials Referrals  Referral Id  Trials Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "Not parsed, or complexity is not rare_complex"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "List Trials",
+        "tags": [
+          "trials"
+        ]
+      }
+    },
+    "/referrals/{referral_id}/trials/{trial_id}/approve": {
+      "post": {
+        "description": "The physician's explicit approval to discuss this trial with the patient.",
+        "operationId": "approve_trial_referrals__referral_id__trials__trial_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "title": "Referral Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "trial_id",
+            "required": true,
+            "schema": {
+              "title": "Trial Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveTrialRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Referral"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Approver is not the referring physician"
+          },
+          "422": {
+            "description": "Trial was not in the matched list for this case"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Approve Trial",
+        "tags": [
+          "trials"
+        ]
+      }
+    },
+    "/referrals/{referral_id}/waitlist": {
+      "post": {
+        "operationId": "waitlist_referrals__referral_id__waitlist_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Referral"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Waitlist",
+        "tags": [
+          "referrals"
+        ]
+      }
+    },
+    "/specialists": {
+      "get": {
+        "operationId": "list_specialists_specialists_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Specialist"
+                  },
+                  "title": "Response List Specialists Specialists Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "List Specialists",
+        "tags": [
+          "directory"
+        ]
+      }
+    },
+    "/specialists/{specialist_id}": {
+      "get": {
+        "operationId": "get_specialist_specialists__specialist_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "specialist_id",
+            "required": true,
+            "schema": {
+              "title": "Specialist Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Specialist"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Get Specialist",
+        "tags": [
+          "directory"
+        ]
+      }
+    }
+  }
+}

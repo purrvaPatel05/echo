@@ -1,14 +1,37 @@
 # Local Postgres + Redis, matching prod (Vultr Managed PG / Redis).
-# The mock app does NOT need these yet -- it's here so everyone has the same infra
-# the moment we swap the in-memory store for SQLAlchemy and add Celery.
+#
+#   docker compose up -d
+#   cd backend   # then set DATABASE_URL in backend/.env, or leave it unset: the default matches this Postgres
+#   uv run alembic upgrade head && uv run python -m app.seed
+#
+# You don't need Docker to develop: the backend also runs on a SQLite file (DATABASE_URL in backend/.env).
+# This file is for LOCAL development only: its passwords are public and its ports are bound to
+# localhost. Production uses a managed PostgreSQL with its own credentials (see backend/.env.example).
+# Postgres is what production uses. Redis is only needed for Celery jobs (JOB_BACKEND=celery) and
+# for live delivery of consult messages over the WebSocket.
 services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_USER: openevidence
-      POSTGRES_PASSWORD: openevidence
-      POSTGRES_DB: openevidence
-    ports: ["5432:5432"]
+      # These must match DATABASE_URL's default in backend/app/config.py (checked by a backend test).
+      POSTGRES_USER: echo
+      POSTGRES_PASSWORD: echo
+      POSTGRES_DB: echo
+    ports: ["127.0.0.1:5432:5432"]   # local only: this database has a known password
+    volumes: ["echo-pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U echo -d echo"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   redis:
     image: redis:7
-    ports: ["6379:6379"]
+    ports: ["127.0.0.1:6379:6379"]   # local only: Redis here has no password
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  echo-pgdata:

@@ -1,3 +1,4 @@
+import { getToken, UNAUTHORIZED_EVENT } from '@/echo/session'
 import type { components } from './schema'
 
 // Types come from ../openapi.json via `npm run gen:api` -- never hand-write API shapes.
@@ -13,11 +14,18 @@ export type Slot = Schemas['Slot']
 export type Specialist = Schemas['Specialist']
 export type User = Schemas['User']
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getToken()
   const res = await fetch(`/api${path}`, {
     ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
   })
+  // A 401 to a request that carried a session means it ended (expired or invalid): the app returns to sign-in.
+  if (res.status === 401 && token) window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
   if (!res.ok) throw new Error(`${res.status} ${await res.text()}`)
   return res.json()
 }
