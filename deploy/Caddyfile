@@ -1,0 +1,26 @@
+# SITE_ADDRESS decides the address and HTTPS:
+#   a hostname (echo.example.com, or 203-0-113-7.sslip.io) -> Caddy gets a free HTTPS certificate itself
+#   :80                                                    -> plain HTTP on the server's IP (no certificate)
+{$SITE_ADDRESS:localhost} {
+	encode gzip
+
+	# The API. The backend is only reachable through here.
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+	handle /health {
+		reverse_proxy backend:8000
+	}
+
+	# The frontend still tries a Socket.IO connection the backend doesn't have; answer it cheaply.
+	handle /socket.io/* {
+		respond 404
+	}
+
+	# The website; deep links such as /referral/ref_1/matches fall back to index.html.
+	handle {
+		root * /srv/echo
+		try_files {path} /index.html
+		file_server
+	}
+}

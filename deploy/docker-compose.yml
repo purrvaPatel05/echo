@@ -1,0 +1,58 @@
+# ECHO on one server: Postgres + the API + the website (Caddy, with automatic HTTPS).
+#
+#   cp .env.example .env      # then fill it in (see the comments in it)
+#   docker compose up -d --build
+#
+# Only Caddy is reachable from the internet (ports 80 and 443). Postgres and the API are on the
+# private compose network. Data lives in the `pgdata` volume and survives restarts and rebuilds.
+name: echo
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: echo
+      POSTGRES_DB: echo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U echo -d echo"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+asyncpg://echo:${POSTGRES_PASSWORD}@postgres:5432/echo
+      # The site and the API share one address, so CORS isn't needed; this just satisfies the safety check.
+      CORS_ORIGINS: '["https://${SITE_ADDRESS:-localhost}"]'
+    depends_on:
+      postgres: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
+    ports: ["80:80", "443:443"]
+    volumes: ["caddy_data:/data", "caddy_config:/config"]
+    depends_on:
+      backend: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

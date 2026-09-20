@@ -1,0 +1,14 @@
+# The website: builds the React app (real backend, not the in-browser mock) and serves it with Caddy,
+# which also forwards /api to the backend. Build context: the repo root (deploy/docker-compose.yml sets it).
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend ./
+# Without this the site would ship the fake in-browser data and never call the backend.
+ENV VITE_USE_MOCK=false
+RUN npm run build
+
+FROM caddy:2-alpine
+COPY deploy/Caddyfile /etc/caddy/Caddyfile
+COPY --from=build /app/dist /srv/echo
