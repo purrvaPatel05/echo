@@ -7,7 +7,8 @@ approves. **Nothing is sent or booked without the physician's explicit approval.
 | Part | What it is |
 |---|---|
 | `backend/` | FastAPI + SQLAlchemy (async), Alembic migrations, Claude-based matching with a rules-only fallback, mock scheduling/insurance/trials, Auth0 or dev-header auth |
-| `frontend/` | React + Vite + TypeScript, Tailwind v4, TanStack Query. Runs on an in-browser mock **or** the real backend |
+| `frontend/` | React + Vite + TypeScript, Tailwind v4, TanStack Query. Runs on an in-browser mock **or** the real backend. Design: violet, navy and mint with a heartbeat motif (Figma file "ECHO", page "ECHO — Final") |
+| `deploy/` | Production deploy on one server: Docker Compose (Postgres + API + Caddy with automatic HTTPS). See [`deploy/README.md`](deploy/README.md) |
 | `docs/` | The frontend's API contract, the compatibility notes, and the backend handoff/auth guides |
 
 ## Run it
@@ -39,16 +40,31 @@ npm run dev
 - **Real Claude matching:** set `ANTHROPIC_API_KEY` in `backend/.env`. Without it a keyword fallback is used and results
   are less accurate. `GOOGLE_MAPS_API_KEY` is optional too (without it, distances are straight-line).
 - **Sign-in page:** set `AUTH_MODE=session` with `SESSION_SECRET` and `DEMO_PASSWORD` (see `backend/.env.example`) and the app shows a login
-  page; each demo doctor has their own referrals and conversations. Mock mode and `AUTH_MODE=dev` have no login.
+  page; each demo doctor has their own referrals and conversations. Type the doctor's email (shown on the page, e.g.
+  `elena.ruiz@riverside.example`) with the demo password, or, with `DEMO_ACCOUNT_LOGIN=true`, click a demo doctor. Mock mode and
+  `AUTH_MODE=dev` have no login.
 - **Login:** the backend defaults to `AUTH_MODE=auth0` and refuses requests until Auth0 is configured, so local runs set
   `AUTH_MODE=dev`, which needs no login (requests act as `DEV_DEFAULT_PHYSICIAN`, or the `X-Dev-Physician` header).
   `auth0` mode needs a real token; see [`docs/backend-handoff/AUTH.md`](docs/backend-handoff/AUTH.md).
-- Swagger UI for the core API is at http://localhost:8000/docs.
+- **Demo colleague replies:** `SIMULATE_COLLEAGUE_REPLIES=true` makes a colleague answer chat messages a few seconds later with a canned
+  reply labelled "Demo reply". Demo only; refused with `AUTH_MODE=auth0`.
+- Swagger UI for the core API is at http://localhost:8000/docs (hidden when `ENVIRONMENT=production`).
 
 ## Deploying
 
-See [`docs/deployment-readiness.md`](docs/deployment-readiness.md): required settings, how authentication works in the cloud
-(the frontend cannot log in, so a public demo uses the explicit `AUTH_MODE=demo`), the proposed proxy config, and what is unverified.
+**One server with Docker** (tested on a Vultr Ubuntu VM): follow [`deploy/README.md`](deploy/README.md). `docker compose up -d --build`
+in `deploy/` starts Postgres, the API and the website; Caddy serves the site, forwards `/api` to the API, and gets a free HTTPS
+certificate for `SITE_ADDRESS` (a real domain, or `<ip-with-dashes>.sslip.io` until you have one). Real settings go in `deploy/.env`
+(git-ignored; the template is `deploy/.env.example`). Production mode (`ENVIRONMENT=production`) refuses dev auth, SQLite,
+default database credentials and `*` in CORS, and hides `/docs`.
+
+- Sign-in for a public demo is `AUTH_MODE=session` (shared demo password, optional one-click demo doctors). It is demo-grade:
+  tokens are not revocable and anyone with the address can use it. Real logins need `AUTH_MODE=auth0` (see
+  [`docs/backend-handoff/AUTH.md`](docs/backend-handoff/AUTH.md)).
+- With `ANTHROPIC_API_KEY` set, every referral spends Claude credits. Leave it empty to use the free keyword fallback.
+- The Docker images were first built on the server, not in CI, and `vercel.json` (a separate Vercel attempt) is untested.
+
+Older background, still accurate for its checks and known limitations: [`docs/deployment-readiness.md`](docs/deployment-readiness.md).
 Every backend setting is documented in [`backend/.env.example`](backend/.env.example).
 
 ## How the pieces fit
@@ -87,4 +103,4 @@ fails if `src/api/schema.d.ts` no longer matches the root `openapi.json`.
 | Distance | Straight-line, or Google Maps if a key is set |
 | Case reading and specialist fit | Claude if a key is set, otherwise a keyword fallback |
 | Patient notification and confirmation | **Not implemented.** "Sent to patient" is only a timeline event; a dev-only endpoint stands in for the patient's answer |
-| Consult delivery | Messages are saved; live delivery over a WebSocket needs Redis and is best effort |
+| Consult delivery | Messages are saved; live delivery over a WebSocket needs Redis and is best effort. In demo setups a simulated colleague replies (labelled "Demo reply") |

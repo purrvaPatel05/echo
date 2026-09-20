@@ -1,5 +1,10 @@
 # Deployment readiness (audit, 2026-09-19)
 
+> **Update 2026-09-20:** the app now has a login page (`AUTH_MODE=session`) and a Docker deploy (`deploy/`, see
+> [`deploy/README.md`](../deploy/README.md)), which was deployed to a Vultr server and tested over HTTPS. Statements below that
+> "the frontend cannot log in" or that there is "no Dockerfile" describe the audit date and are out of date; the rest (known
+> limitations, what is unverified) still applies.
+
 Status: **YELLOW.** Deployable as a hackathon demo behind a reverse proxy, with the limitations below. It is **not** ready
 for real multi-user production, because the approved frontend cannot log in (see 1). Nothing has been deployed.
 
