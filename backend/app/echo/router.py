@@ -73,7 +73,13 @@ async def demo_accounts(repo: Repository = Depends(get_repo)):
     if not (_session_mode() and settings.demo_account_login):
         raise HTTPException(404, "Not found")
     return [
-        s.DemoAccount(id=p.id, name=p.name, specialty=p.specialty, organization=p.practice_name)
+        s.DemoAccount(
+            id=p.id,
+            name=p.name,
+            specialty=p.specialty,
+            organization=p.practice_name,
+            email=demo_email(p),
+        )
         for p in await repo.physicians()
     ]
 

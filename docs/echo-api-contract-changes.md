@@ -372,7 +372,7 @@ With a session backend (`AUTH_MODE=session`) the app shows a login page and ever
 |---|---|---|---|
 | GET | `/api/echo/auth/config` | none | `{ "login": true, "demoAccounts": true }`. Open. `login: false` = no login screen |
 | POST | `/api/echo/auth/login` | `{ "email", "password" }` | `{ "token", "physician" }`; **401** "Check your email and password." (same for an unknown email); **429** after repeated failures |
-| GET | `/api/echo/auth/demo-accounts` | none | The demo physicians for the one-click list; **404** unless `DEMO_ACCOUNT_LOGIN=true` |
+| GET | `/api/echo/auth/demo-accounts` | none | The demo physicians for the one-click list (each with the `email` to type on the login page); **404** unless `DEMO_ACCOUNT_LOGIN=true` |
 | POST | `/api/echo/auth/demo-login` | `{ "physicianId" }` | `{ "token", "physician" }`; **404** unless `DEMO_ACCOUNT_LOGIN=true` |
 
 - **Demo-grade.** All demo accounts share `DEMO_PASSWORD`; emails are `first.last@practice.example` (for example

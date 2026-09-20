@@ -5,6 +5,7 @@ doesn't model, the choice made here is written next to the code and listed in
 docs/echo-compat-notes.md, so the backend owners can see every place the contracts were reconciled.
 """
 
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -44,7 +45,19 @@ _MAX_MATCHES = 3
 _DEFAULT_TRIAL_MILES = 100
 _CHECKS = ["clinical_fit", "insurance", "distance", "urgency", "availability"]
 _TIER_WORD = {FitTier.EXCELLENT: "Excellent", FitTier.GOOD: "Good", FitTier.PARTIAL: "Partial"}
-_MAX_REASON = 90
+_MAX_REASON = 110
+_LEGACY_CUT = 90  # the old hard limit; see _describe
+
+
+def short_reason(text: str, limit: int = _MAX_REASON) -> str:
+    """A one-line reason from longer text: the first sentence, and if that is still long, cut at a
+    word boundary with an ellipsis (never mid-word)."""
+    text = " ".join(text.split())
+    first = re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0].rstrip(".")
+    if len(first) <= limit:
+        return first
+    cut = first[:limit].rsplit(" ", 1)[0].rstrip(" ,;:-")
+    return f"{cut}…"
 
 
 def _aware(dt: datetime | None) -> datetime | None:
@@ -160,10 +173,15 @@ class EchoService:
         through /api/echo (no form data) are described from the case notes and the parsed case."""
         if b.meta:
             m = b.meta
-            return m.reason, m.details, m.specialty, m.subspecialty, m.preferred_distance_miles
+            reason = m.reason
+            # Earlier versions saved the reason cut at exactly 90 characters, often mid-word. Heal
+            # those when read: a reason that is a 90-character prefix of the case notes.
+            if len(reason) == _LEGACY_CUT and m.details.startswith(reason):
+                reason = short_reason(m.details)
+            return reason, m.details, m.specialty, m.subspecialty, m.preferred_distance_miles
         parsed = b.ref.parsed_case
         first_line = b.ref.case_notes.strip().splitlines()[0]
-        reason = (parsed.condition_summary if parsed else first_line)[:_MAX_REASON]
+        reason = short_reason(parsed.condition_summary if parsed else first_line)
         specialty = (
             parsed.suggested_specialties[0] if parsed and parsed.suggested_specialties else ""
         )

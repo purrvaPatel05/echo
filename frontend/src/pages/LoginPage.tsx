@@ -45,6 +45,7 @@ export default function LoginPage() {
   const [failure, setFailure] = useState<Failure | null>(null)
   const [busy, setBusy] = useState(false)
   const errorCount = Object.values(errors).filter(Boolean).length
+  const hasDemo = !!demo.data && demo.data.length > 0
 
   if (state.status === 'signed-in') return <Navigate to={from} replace />
 
@@ -102,6 +103,7 @@ export default function LoginPage() {
           ) : failure ? (
             <Alert tone="destructive" title={failureAlert[failure][0]}>
               {failureAlert[failure][1]}
+              {failure === 'invalid' && hasDemo && ' Or sign in as a demo doctor below.'}
             </Alert>
           ) : (
             state.status === 'anonymous' &&
@@ -117,7 +119,7 @@ export default function LoginPage() {
               <Input
                 type="email"
                 autoComplete="username"
-                placeholder="you@practice.org"
+                placeholder={demo.data?.[0]?.email ?? 'you@practice.org'}
                 value={email}
                 disabled={busy}
                 onChange={(e) => {
@@ -167,6 +169,7 @@ export default function LoginPage() {
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-body-sm font-medium">{a.name}</span>
                         <span className="block truncate text-xs text-muted-foreground">{a.specialty}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{a.email}</span>
                       </span>
                       <ArrowRight className="size-4 text-primary" aria-hidden />
                     </button>

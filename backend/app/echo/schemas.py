@@ -262,6 +262,7 @@ class DemoAccount(Wire):
     name: str
     specialty: str
     organization: str
+    email: str  # what to type on the login page (with the demo password)
 
 
 class Session(Wire):

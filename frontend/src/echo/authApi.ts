@@ -11,6 +11,8 @@ export interface DemoAccount {
   name: string
   specialty: string
   organization: string
+  /** What to type in the email field (with the demo password). */
+  email: string
 }
 export interface Session {
   token: string

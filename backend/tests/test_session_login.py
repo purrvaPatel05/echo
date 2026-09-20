@@ -48,6 +48,16 @@ async def test_demo_emails_are_predictable():
     assert demo_email(p) == "elena.ruiz@riverside.example"
 
 
+async def test_demo_account_list_shows_the_email_that_logs_in(login):
+    accounts = (await login.get("/api/echo/auth/demo-accounts")).json()
+    assert accounts
+    for a in accounts:
+        r = await login.post(
+            "/api/echo/auth/login", json={"email": a["email"], "password": PASSWORD}
+        )
+        assert r.status_code == 200 and r.json()["physician"]["id"] == a["id"], a
+
+
 async def test_password_login_returns_a_working_token_for_that_physician(login):
     r = await login.post(
         "/api/echo/auth/login", json={"email": " Marcus.Bell@harbor.example ", "password": PASSWORD}

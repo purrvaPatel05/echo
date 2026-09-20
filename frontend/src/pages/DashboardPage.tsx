@@ -13,12 +13,18 @@ import { useEchoMe, useEchoReferrals } from '@/echo/hooks'
 
 const PANEL_ID = 'referrals-panel'
 
-/** "Dr. Rivera, 2 referrals need you today." Falls back to a plain welcome while the name loads or when nothing needs attention. */
-function greeting(name: string | undefined, needs: number): string {
+/**
+ * "Dr. Rivera, 2 referrals need you today." Referrals with a problem come first, then ones waiting on the physician's
+ * approval; only when neither exists is the physician "all caught up". Plain welcome while the name loads.
+ */
+function greeting(name: string | undefined, needs: number, awaitingApproval: number): string {
   const last = name?.trim().split(/\s+/).at(-1)
   const who = last ? `Dr. ${last}` : 'Welcome back'
-  if (needs === 0) return last ? `${who}, you're all caught up.` : 'Your referrals'
-  return `${who}, ${needs} ${needs === 1 ? 'referral needs' : 'referrals need'} you today.`
+  if (needs > 0) return `${who}, ${needs} ${needs === 1 ? 'referral needs' : 'referrals need'} you today.`
+  if (awaitingApproval > 0) {
+    return `${who}, ${awaitingApproval} ${awaitingApproval === 1 ? 'referral is' : 'referrals are'} waiting for your approval.`
+  }
+  return last ? `${who}, you're all caught up.` : 'Your referrals'
 }
 
 export default function DashboardPage() {
@@ -41,7 +47,7 @@ export default function DashboardPage() {
         <div className="relative z-10 flex max-w-[520px] flex-col items-start gap-2.5">
           <p className="font-display text-sm font-medium text-mint-300">Your referrals</p>
           <h1 id="dashboard-heading" className="text-[1.75rem] leading-9 font-semibold">
-            {greeting(me?.name, atRisk.length)}
+            {greeting(me?.name, atRisk.length, referrals?.filter((r) => r.status === 'awaiting_approval').length ?? 0)}
           </h1>
           <p className="text-body-sm text-white/75">
             {referrals ? `${referrals.filter((r) => matchesFilter(r, 'active')).length} active. ` : ''}Nothing is booked until you approve.
